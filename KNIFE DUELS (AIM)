@@ -1,0 +1,469 @@
+-- =========================================
+--   Knife Duels Aim Assist + Loading GUI
+--   Активация aim: зажать E
+-- =========================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- ====== НАСТРОЙКИ AIM ======
+local CONFIG = {
+    AIM_KEY = Enum.KeyCode.E,
+    FOV = 150,
+    SMOOTHNESS = 0.25,
+    WALL_CHECK = true,
+    TEAM_CHECK = true,
+    TARGET_PART = "Head",
+}
+
+-- =========================================
+--           ЗАГРУЗОЧНЫЙ ЭКРАН
+-- =========================================
+local function showLoadingScreen()
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "KnifeDuelsLoading"
+    gui.IgnoreGuiInset = true
+    gui.ResetOnSpawn = false
+    gui.DisplayOrder = 1000
+    gui.Parent = PlayerGui
+
+    -- Фон
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+    bg.BorderSizePixel = 0
+    bg.BackgroundTransparency = 1
+    bg.Parent = gui
+
+    -- Градиент на фоне
+    local bgGrad = Instance.new("UIGradient")
+    bgGrad.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 0, 0)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(30, 5, 5)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 0, 0)),
+    }
+    bgGrad.Rotation = 45
+    bgGrad.Parent = bg
+
+    -- Центральный контейнер
+    local container = Instance.new("Frame")
+    container.Size = UDim2.new(0, 500, 0, 260)
+    container.Position = UDim2.new(0.5, 0, 0.5, 0)
+    container.AnchorPoint = Vector2.new(0.5, 0.5)
+    container.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+    container.BackgroundTransparency = 1
+    container.BorderSizePixel = 0
+    container.Parent = gui
+
+    local containerCorner = Instance.new("UICorner")
+    containerCorner.CornerRadius = UDim.new(0, 12)
+    containerCorner.Parent = container
+
+    local containerStroke = Instance.new("UIStroke")
+    containerStroke.Color = Color3.fromRGB(200, 30, 30)
+    containerStroke.Thickness = 1.5
+    containerStroke.Transparency = 1
+    containerStroke.Parent = container
+
+    -- Заголовок "LOADING"
+    local header = Instance.new("TextLabel")
+    header.Size = UDim2.new(1, -40, 0, 40)
+    header.Position = UDim2.new(0.5, 0, 0, 20)
+    header.AnchorPoint = Vector2.new(0.5, 0)
+    header.BackgroundTransparency = 1
+    header.Text = "ЗАГРУЗКА KNIFE DUELS AIM"
+    header.TextColor3 = Color3.fromRGB(255, 255, 255)
+    header.Font = Enum.Font.GothamBold
+    header.TextSize = 20
+    header.TextTransparency = 1
+    header.TextStrokeTransparency = 0.7
+    header.TextStrokeColor3 = Color3.fromRGB(120, 0, 0)
+    header.Parent = container
+
+    -- Текущий статус
+    local status = Instance.new("TextLabel")
+    status.Size = UDim2.new(1, -40, 0, 24)
+    status.Position = UDim2.new(0.5, 0, 0, 75)
+    status.AnchorPoint = Vector2.new(0.5, 0)
+    status.BackgroundTransparency = 1
+    status.Text = "Инициализация..."
+    status.TextColor3 = Color3.fromRGB(180, 180, 180)
+    status.Font = Enum.Font.Gotham
+    status.TextSize = 14
+    status.TextTransparency = 1
+    status.TextXAlignment = Enum.TextXAlignment.Left
+    status.Parent = container
+
+    -- Прогресс-бар (задний фон)
+    local barBg = Instance.new("Frame")
+    barBg.Size = UDim2.new(1, -40, 0, 14)
+    barBg.Position = UDim2.new(0.5, 0, 0, 120)
+    barBg.AnchorPoint = Vector2.new(0.5, 0)
+    barBg.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    barBg.BorderSizePixel = 0
+    barBg.BackgroundTransparency = 1
+    barBg.Parent = container
+
+    local barBgCorner = Instance.new("UICorner")
+    barBgCorner.CornerRadius = UDim.new(1, 0)
+    barBgCorner.Parent = barBg
+
+    -- Прогресс-бар (заполнение)
+    local barFill = Instance.new("Frame")
+    barFill.Size = UDim2.new(0, 0, 1, 0)
+    barFill.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
+    barFill.BorderSizePixel = 0
+    barFill.BackgroundTransparency = 1
+    barFill.Parent = barBg
+
+    local barFillCorner = Instance.new("UICorner")
+    barFillCorner.CornerRadius = UDim.new(1, 0)
+    barFillCorner.Parent = barFill
+
+    local barGrad = Instance.new("UIGradient")
+    barGrad.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 80, 80)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 0)),
+    }
+    barGrad.Parent = barFill
+
+    -- Свечение вокруг прогресс-бара
+    local barGlow = Instance.new("UIStroke")
+    barGlow.Color = Color3.fromRGB(255, 60, 60)
+    barGlow.Thickness = 1.5
+    barGlow.Transparency = 1
+    barGlow.Parent = barBg
+
+    -- Процент загрузки
+    local percent = Instance.new("TextLabel")
+    percent.Size = UDim2.new(1, -40, 0, 30)
+    percent.Position = UDim2.new(0.5, 0, 0, 150)
+    percent.AnchorPoint = Vector2.new(0.5, 0)
+    percent.BackgroundTransparency = 1
+    percent.Text = "0%"
+    percent.TextColor3 = Color3.fromRGB(255, 255, 255)
+    percent.Font = Enum.Font.GothamBlack
+    percent.TextSize = 26
+    percent.TextTransparency = 1
+    percent.Parent = container
+
+    -- Подвал
+    local footer = Instance.new("TextLabel")
+    footer.Size = UDim2.new(1, -40, 0, 20)
+    footer.Position = UDim2.new(0.5, 0, 1, -35)
+    footer.AnchorPoint = Vector2.new(0.5, 0)
+    footer.BackgroundTransparency = 1
+    footer.Text = "by Anonymous  •  v1.0"
+    footer.TextColor3 = Color3.fromRGB(120, 120, 120)
+    footer.Font = Enum.Font.Gotham
+    footer.TextSize = 12
+    footer.TextTransparency = 1
+    footer.Parent = container
+
+    -- ---- Появление GUI ----
+    local fadeIn = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    TweenService:Create(bg, fadeIn, { BackgroundTransparency = 0 }):Play()
+    task.wait(0.05)
+    TweenService:Create(container, fadeIn, { BackgroundTransparency = 0.05 }):Play()
+    TweenService:Create(containerStroke, fadeIn, { Transparency = 0 }):Play()
+    TweenService:Create(header, fadeIn, { TextTransparency = 0 }):Play()
+    TweenService:Create(status, fadeIn, { TextTransparency = 0 }):Play()
+    TweenService:Create(barBg, fadeIn, { BackgroundTransparency = 0 }):Play()
+    TweenService:Create(barFill, fadeIn, { BackgroundTransparency = 0 }):Play()
+    TweenService:Create(barGlow, fadeIn, { Transparency = 0.5 }):Play()
+    TweenService:Create(percent, fadeIn, { TextTransparency = 0 }):Play()
+    TweenService:Create(footer, fadeIn, { TextTransparency = 0 }):Play()
+
+    task.wait(0.4)
+
+    -- ---- Этапы загрузки ----
+    local steps = {
+        { progress = 8,   text = "Проверка соединения с сервером..." },
+        { progress = 22,  text = "Загрузка конфигурации AIM..." },
+        { progress = 38,  text = "Инициализация FOV: " .. CONFIG.FOV .. "px" },
+        { progress = 52,  text = "Настройка плавности: " .. CONFIG.SMOOTHNESS },
+        { progress = 66,  text = "Проверка целей (wallcheck: " .. tostring(CONFIG.WALL_CHECK) .. ")..." },
+        { progress = 80,  text = "Подключение к RenderStepped..." },
+        { progress = 92,  text = "Привязка клавиши: " .. CONFIG.AIM_KEY.Name },
+        { progress = 100, text = "Готово! Зажми " .. CONFIG.AIM_KEY.Name .. " для активации" },
+    }
+
+    for _, step in ipairs(steps) do
+        -- Анимируем прогресс бар
+        local tween = TweenService:Create(barFill, TweenInfo.new(
+            0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out
+        ), {
+            Size = UDim2.new(step.progress / 100, 0, 1, 0)
+        })
+        tween:Play()
+
+        -- Обновляем текст статуса и процента
+        status.Text = "› " .. step.text
+        percent.Text = step.progress .. "%"
+
+        -- Пульсация процента
+        TweenService:Create(percent, TweenInfo.new(0.15), { TextSize = 30 }):Play()
+        task.wait(0.15)
+        TweenService:Create(percent, TweenInfo.new(0.15), { TextSize = 26 }):Play()
+
+        task.wait(0.25)
+    end
+
+    task.wait(0.4)
+
+    -- ---- Исчезновение загрузочного экрана ----
+    local fadeOut = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+    TweenService:Create(bg, fadeOut, { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(container, fadeOut, { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(containerStroke, fadeOut, { Transparency = 1 }):Play()
+    TweenService:Create(header, fadeOut, { TextTransparency = 1 }):Play()
+    TweenService:Create(status, fadeOut, { TextTransparency = 1 }):Play()
+    TweenService:Create(barBg, fadeOut, { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(barFill, fadeOut, { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(barGlow, fadeOut, { Transparency = 1 }):Play()
+    TweenService:Create(percent, fadeOut, { TextTransparency = 1 }):Play()
+    TweenService:Create(footer, fadeOut, { TextTransparency = 1 }):Play()
+
+    task.wait(0.55)
+    gui:Destroy()
+end
+
+-- =========================================
+--         АНИМИРОВАННАЯ ЗАСТАВКА
+-- =========================================
+local function showIntro()
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "KnifeDuelsIntro"
+    gui.IgnoreGuiInset = true
+    gui.ResetOnSpawn = false
+    gui.DisplayOrder = 999
+    gui.Parent = PlayerGui
+
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    bg.BackgroundTransparency = 1
+    bg.BorderSizePixel = 0
+    bg.Parent = gui
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 120)
+    title.Position = UDim2.new(0.5, 0, 0.5, -40)
+    title.AnchorPoint = Vector2.new(0.5, 0.5)
+    title.BackgroundTransparency = 1
+    title.Text = "KNIFE DUELS"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.TextScaled = true
+    title.Font = Enum.Font.GothamBlack
+    title.TextTransparency = 1
+    title.TextStrokeTransparency = 1
+    title.TextStrokeColor3 = Color3.fromRGB(255, 0, 0)
+    title.Parent = gui
+
+    local subtitle = Instance.new("TextLabel")
+    subtitle.Size = UDim2.new(1, 0, 0, 80)
+    subtitle.Position = UDim2.new(0.5, 0, 0.5, 80)
+    subtitle.AnchorPoint = Vector2.new(0.5, 0.5)
+    subtitle.BackgroundTransparency = 1
+    subtitle.Text = "( AIM )"
+    subtitle.TextColor3 = Color3.fromRGB(255, 50, 50)
+    subtitle.TextScaled = true
+    subtitle.Font = Enum.Font.GothamBold
+    subtitle.TextTransparency = 1
+    subtitle.TextStrokeTransparency = 1
+    subtitle.TextStrokeColor3 = Color3.fromRGB(80, 0, 0)
+    subtitle.Parent = gui
+
+    local grad = Instance.new("UIGradient")
+    grad.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 60, 60)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 255, 255)),
+    }
+    grad.Rotation = 0
+    grad.Parent = title
+
+    task.spawn(function()
+        local t = 0
+        while gui.Parent do
+            t = t + 0.02
+            grad.Rotation = (t * 60) % 360
+            task.wait(0.03)
+        end
+    end)
+
+    TweenService:Create(bg, TweenInfo.new(0.5), { BackgroundTransparency = 0.4 }):Play()
+
+    title.TextTransparency = 0
+    title.TextStrokeTransparency = 0.6
+    TweenService:Create(title, TweenInfo.new(
+        0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out
+    ), {
+        Position = UDim2.new(0.5, 0, 0.5, -20)
+    }):Play()
+
+    task.wait(0.3)
+    subtitle.TextTransparency = 0
+    subtitle.TextStrokeTransparency = 0.6
+    TweenService:Create(subtitle, TweenInfo.new(
+        0.8, Enum.EasingStyle.Back, Enum.EasingDirection.Out
+    ), {
+        Position = UDim2.new(0.5, 0, 0.5, 80)
+    }):Play()
+
+    task.spawn(function()
+        task.wait(1.0)
+        local pulseTime = 0
+        while gui.Parent and pulseTime < 2 do
+            pulseTime = pulseTime + 0.05
+            local scale = 1 + math.sin(pulseTime * 6) * 0.03
+            title.Size = UDim2.new(1 * scale, 0, 0, 120 * scale)
+            task.wait(0.03)
+        end
+    end)
+
+    task.wait(2.5)
+
+    TweenService:Create(title, TweenInfo.new(0.6), {
+        TextTransparency = 1, TextStrokeTransparency = 1,
+        Position = UDim2.new(0.5, 0, 0.5, -60)
+    }):Play()
+    TweenService:Create(subtitle, TweenInfo.new(0.6), {
+        TextTransparency = 1, TextStrokeTransparency = 1,
+        Position = UDim2.new(0.5, 0, 0.5, 60)
+    }):Play()
+    TweenService:Create(bg, TweenInfo.new(0.6), { BackgroundTransparency = 1 }):Play()
+
+    task.wait(0.7)
+    gui:Destroy()
+end
+
+-- =========================================
+--              AIM ASSIST
+-- =========================================
+local aiming = false
+local currentTarget = nil
+
+local function isAlive(plr)
+    local char = plr.Character
+    if not char then return false end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    return hum and hum.Health > 0
+end
+
+local function isTeammate(plr)
+    if not CONFIG.TEAM_CHECK then return false end
+    if not LocalPlayer.Team or not plr.Team then return false end
+    return LocalPlayer.Team == plr.Team
+end
+
+local function getTargetPart(plr)
+    local char = plr.Character
+    if not char then return nil end
+    return char:FindFirstChild(CONFIG.TARGET_PART)
+        or char:FindFirstChild("HumanoidRootPart")
+        or char:FindFirstChild("Head")
+end
+
+local function findBestTarget()
+    local bestTarget, bestScore = nil, math.huge
+    local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr == LocalPlayer then continue end
+        if not isAlive(plr) then continue end
+        if isTeammate(plr) then continue end
+
+        local part = getTargetPart(plr)
+        if not part then continue end
+
+        if CONFIG.WALL_CHECK then
+            local rayParams = RaycastParams.new()
+            rayParams.FilterType = Enum.RaycastFilterType.Exclude
+            rayParams.FilterDescendantsInstances = {LocalPlayer.Character, Camera}
+            local origin = Camera.CFrame.Position
+            local direction = (part.Position - origin)
+            local result = Workspace:Raycast(origin, direction, rayParams)
+            if result and not result.Instance:IsDescendantOf(plr.Character) then
+                continue
+            end
+        end
+
+        local screenPoint, onScreen = Camera:WorldToViewportPoint(part.Position)
+        if not onScreen then continue end
+
+        local screenPos = Vector2.new(screenPoint.X, screenPoint.Y)
+        local distFromCenter = (screenPos - center).Magnitude
+
+        if distFromCenter > CONFIG.FOV then continue end
+
+        if distFromCenter < bestScore then
+            bestScore = distFromCenter
+            bestTarget = plr
+        end
+    end
+
+    return bestTarget
+end
+
+RunService.RenderStepped:Connect(function()
+    if not aiming then
+        currentTarget = nil
+        return
+    end
+
+    local target = findBestTarget()
+    if not target then return end
+    currentTarget = target
+
+    local part = getTargetPart(target)
+    if not part then return end
+
+    local targetPos = part.Position
+    local cameraPos = Camera.CFrame.Position
+    local direction = (targetPos - cameraPos).Unit
+    local lookCFrame = CFrame.new(cameraPos, cameraPos + direction)
+
+    if CONFIG.SMOOTHNESS > 0 then
+        Camera.CFrame = Camera.CFrame:Lerp(lookCFrame, 1 - CONFIG.SMOOTHNESS)
+    else
+        Camera.CFrame = lookCFrame
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == CONFIG.AIM_KEY then
+        aiming = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input, gameProcessed)
+    if input.KeyCode == CONFIG.AIM_KEY then
+        aiming = false
+        currentTarget = nil
+    end
+end)
+
+-- =========================================
+--           ПОСЛЕДОВАТЕЛЬНОСТЬ
+-- =========================================
+
+-- 1. Показываем загрузочный экран
+showLoadingScreen()
+
+-- 2. Небольшая пауза
+task.wait(0.2)
+
+-- 3. Показываем анимированную заставку
+showIntro()
+
+-- 4. Скрипт готов
+print("[Knife Duels Aim] Загружено. Зажми E для активации.")
