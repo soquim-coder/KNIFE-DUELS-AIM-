@@ -1,5 +1,6 @@
 -- =========================================
 --   Knife Duels Aim Assist + Loading GUI
+--   Developer: SOQUIM
 --   Активация aim: зажать E
 -- =========================================
 
@@ -23,6 +24,85 @@ local CONFIG = {
     TARGET_PART = "Head",
 }
 
+-- ====== ИНФО О РАЗРАБОТЧИКЕ ======
+local DEV = {
+    NAME = "SOQUIM",
+    GITHUB = "github.com/soquim",  -- замени на свой ник
+    VERSION = "v1.0",
+}
+
+-- =========================================
+--      ФУНКЦИЯ: РИСУЕМ ЛОГОТИП GITHUB
+-- =========================================
+-- Roblox не поддерживает SVG, поэтому рисуем силуэт кота-октоката
+-- через комбинацию Frame-ов (круглая голова + уши + тело)
+local function createGithubLogo(parent, size)
+    local logo = Instance.new("Frame")
+    logo.Name = "GithubLogo"
+    logo.Size = UDim2.new(0, size, 0, size)
+    logo.BackgroundTransparency = 1
+    logo.Parent = parent
+
+    -- Круглая голова (основа)
+    local head = Instance.new("Frame")
+    head.Size = UDim2.new(0.8, 0, 0.8, 0)
+    head.Position = UDim2.new(0.5, 0, 0.55, 0)
+    head.AnchorPoint = Vector2.new(0.5, 0.5)
+    head.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    head.BorderSizePixel = 0
+    head.Parent = logo
+
+    local headCorner = Instance.new("UICorner")
+    headCorner.CornerRadius = UDim.new(1, 0)
+    headCorner.Parent = head
+
+    -- Левое ухо
+    local earL = Instance.new("Frame")
+    earL.Size = UDim2.new(0.25, 0, 0.25, 0)
+    earL.Position = UDim2.new(0.28, 0, 0.18, 0)
+    earL.AnchorPoint = Vector2.new(0.5, 0.5)
+    earL.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    earL.BorderSizePixel = 0
+    earL.Rotation = -20
+    earL.Parent = logo
+
+    local earLCorner = Instance.new("UICorner")
+    earLCorner.CornerRadius = UDim.new(0.3, 0)
+    earLCorner.Parent = earL
+
+    -- Правое ухо
+    local earR = Instance.new("Frame")
+    earR.Size = UDim2.new(0.25, 0, 0.25, 0)
+    earR.Position = UDim2.new(0.72, 0, 0.18, 0)
+    earR.AnchorPoint = Vector2.new(0.5, 0.5)
+    earR.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    earR.BorderSizePixel = 0
+    earR.Rotation = 20
+    earR.Parent = logo
+
+    local earRCorner = Instance.new("UICorner")
+    earRCorner.CornerRadius = UDim.new(0.3, 0)
+    earRCorner.Parent = earR
+
+    -- Хвост (маленький шарик слева-снизу)
+    local tail = Instance.new("Frame")
+    tail.Size = UDim2.new(0.18, 0, 0.18, 0)
+    tail.Position = UDim2.new(0.08, 0, 0.82, 0)
+    tail.AnchorPoint = Vector2.new(0.5, 0.5)
+    tail.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    tail.BorderSizePixel = 0
+    tail.Parent = logo
+
+    local tailCorner = Instance.new("UICorner")
+    tailCorner.CornerRadius = UDim.new(1, 0)
+    tailCorner.Parent = tail
+
+    -- Глаз (вырезаем из головы маленьким фоном-цветом)
+    -- Вместо выреза - оставим как силуэт (белый кот)
+
+    return logo
+end
+
 -- =========================================
 --           ЗАГРУЗОЧНЫЙ ЭКРАН
 -- =========================================
@@ -42,7 +122,6 @@ local function showLoadingScreen()
     bg.BackgroundTransparency = 1
     bg.Parent = gui
 
-    -- Градиент на фоне
     local bgGrad = Instance.new("UIGradient")
     bgGrad.Color = ColorSequence.new{
         ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 0, 0)),
@@ -54,7 +133,7 @@ local function showLoadingScreen()
 
     -- Центральный контейнер
     local container = Instance.new("Frame")
-    container.Size = UDim2.new(0, 500, 0, 260)
+    container.Size = UDim2.new(0, 500, 0, 300)
     container.Position = UDim2.new(0.5, 0, 0.5, 0)
     container.AnchorPoint = Vector2.new(0.5, 0.5)
     container.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
@@ -101,7 +180,7 @@ local function showLoadingScreen()
     status.TextXAlignment = Enum.TextXAlignment.Left
     status.Parent = container
 
-    -- Прогресс-бар (задний фон)
+    -- Прогресс-бар (фон)
     local barBg = Instance.new("Frame")
     barBg.Size = UDim2.new(1, -40, 0, 14)
     barBg.Position = UDim2.new(0.5, 0, 0, 120)
@@ -134,14 +213,13 @@ local function showLoadingScreen()
     }
     barGrad.Parent = barFill
 
-    -- Свечение вокруг прогресс-бара
     local barGlow = Instance.new("UIStroke")
     barGlow.Color = Color3.fromRGB(255, 60, 60)
     barGlow.Thickness = 1.5
     barGlow.Transparency = 1
     barGlow.Parent = barBg
 
-    -- Процент загрузки
+    -- Процент
     local percent = Instance.new("TextLabel")
     percent.Size = UDim2.new(1, -40, 0, 30)
     percent.Position = UDim2.new(0.5, 0, 0, 150)
@@ -154,18 +232,92 @@ local function showLoadingScreen()
     percent.TextTransparency = 1
     percent.Parent = container
 
-    -- Подвал
-    local footer = Instance.new("TextLabel")
-    footer.Size = UDim2.new(1, -40, 0, 20)
-    footer.Position = UDim2.new(0.5, 0, 1, -35)
+    -- ============================================
+    --          ПОДВАЛ: SOQUIM + GITHUB
+    -- ============================================
+    local footer = Instance.new("Frame")
+    footer.Size = UDim2.new(1, -40, 0, 60)
+    footer.Position = UDim2.new(0.5, 0, 1, -70)
     footer.AnchorPoint = Vector2.new(0.5, 0)
     footer.BackgroundTransparency = 1
-    footer.Text = "by Anonymous  •  v1.0"
-    footer.TextColor3 = Color3.fromRGB(120, 120, 120)
-    footer.Font = Enum.Font.Gotham
-    footer.TextSize = 12
-    footer.TextTransparency = 1
     footer.Parent = container
+
+    -- Разделительная линия
+    local divider = Instance.new("Frame")
+    divider.Size = UDim2.new(1, 0, 0, 1)
+    divider.Position = UDim2.new(0.5, 0, 0, 0)
+    divider.AnchorPoint = Vector2.new(0.5, 0)
+    divider.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+    divider.BorderSizePixel = 0
+    divider.BackgroundTransparency = 1
+    divider.Parent = footer
+
+    -- Левая часть: "Developer: SOQUIM"
+    local devLabel = Instance.new("TextLabel")
+    devLabel.Size = UDim2.new(0.6, 0, 1, 0)
+    devLabel.Position = UDim2.new(0, 0, 0, 0)
+    devLabel.BackgroundTransparency = 1
+    devLabel.Text = "Developer: " .. DEV.NAME
+    devLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    devLabel.Font = Enum.Font.GothamBold
+    devLabel.TextSize = 14
+    devLabel.TextTransparency = 1
+    devLabel.TextXAlignment = Enum.TextXAlignment.Left
+    devLabel.TextYAlignment = Enum.TextYAlignment.Center
+    devLabel.Parent = footer
+
+    -- Правая часть: GitHub логотип + ссылка
+    local githubFrame = Instance.new("Frame")
+    githubFrame.Size = UDim2.new(0.4, 0, 1, 0)
+    githubFrame.Position = UDim2.new(0.6, 0, 0, 0)
+    githubFrame.BackgroundTransparency = 1
+    githubFrame.Parent = footer
+
+    -- Логотип GitHub (рисуем)
+    local logoHolder = Instance.new("Frame")
+    logoHolder.Size = UDim2.new(0, 26, 0, 26)
+    logoHolder.Position = UDim2.new(0, 0, 0.5, 0)
+    logoHolder.AnchorPoint = Vector2.new(0, 0.5)
+    logoHolder.BackgroundTransparency = 1
+    logoHolder.Parent = githubFrame
+
+    local ghLogo = createGithubLogo(logoHolder, 26)
+    ghLogo.BackgroundTransparency = 1
+
+    -- Скрываем логотип изначально (для анимации появления)
+    ghLogo.BackgroundTransparency = 1
+    for _, v in ipairs(ghLogo:GetDescendants()) do
+        if v:IsA("Frame") then
+            v.BackgroundTransparency = 1
+        end
+    end
+
+    -- Текст github.com/soquim
+    local ghText = Instance.new("TextLabel")
+    ghText.Size = UDim2.new(1, -34, 1, 0)
+    ghText.Position = UDim2.new(0, 34, 0, 0)
+    ghText.BackgroundTransparency = 1
+    ghText.Text = DEV.GITHUB
+    ghText.TextColor3 = Color3.fromRGB(200, 200, 200)
+    ghText.Font = Enum.Font.Gotham
+    ghText.TextSize = 13
+    ghText.TextTransparency = 1
+    ghText.TextXAlignment = Enum.TextXAlignment.Left
+    ghText.TextYAlignment = Enum.TextYAlignment.Center
+    ghText.Parent = githubFrame
+
+    -- Версия (по центру под подвалом)
+    local version = Instance.new("TextLabel")
+    version.Size = UDim2.new(1, 0, 0, 16)
+    version.Position = UDim2.new(0.5, 0, 1, -16)
+    version.AnchorPoint = Vector2.new(0.5, 0)
+    version.BackgroundTransparency = 1
+    version.Text = DEV.VERSION
+    version.TextColor3 = Color3.fromRGB(120, 120, 120)
+    version.Font = Enum.Font.Gotham
+    version.TextSize = 11
+    version.TextTransparency = 1
+    version.Parent = container
 
     -- ---- Появление GUI ----
     local fadeIn = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -179,7 +331,34 @@ local function showLoadingScreen()
     TweenService:Create(barFill, fadeIn, { BackgroundTransparency = 0 }):Play()
     TweenService:Create(barGlow, fadeIn, { Transparency = 0.5 }):Play()
     TweenService:Create(percent, fadeIn, { TextTransparency = 0 }):Play()
-    TweenService:Create(footer, fadeIn, { TextTransparency = 0 }):Play()
+    TweenService:Create(divider, fadeIn, { BackgroundTransparency = 0.5 }):Play()
+    TweenService:Create(devLabel, fadeIn, { TextTransparency = 0 }):Play()
+    TweenService:Create(ghText, fadeIn, { TextTransparency = 0 }):Play()
+    TweenService:Create(version, fadeIn, { TextTransparency = 0 }):Play()
+
+    -- Появление логотипа GitHub (плавно проявляем все части)
+    task.spawn(function()
+        task.wait(0.3)
+        for _, v in ipairs(ghLogo:GetDescendants()) do
+            if v:IsA("Frame") then
+                TweenService:Create(v, TweenInfo.new(0.5), {
+                    BackgroundTransparency = 0
+                }):Play()
+            end
+        end
+    end)
+
+    -- Лёгкая пульсация логотипа GitHub (вращение ушей)
+    task.spawn(function()
+        task.wait(0.8)
+        local t = 0
+        while gui.Parent and t < 100 do
+            t = t + 1
+            local scale = 1 + math.sin(t * 0.15) * 0.08
+            logoHolder.Size = UDim2.new(0, 26 * scale, 0, 26 * scale)
+            task.wait(0.03)
+        end
+    end)
 
     task.wait(0.4)
 
@@ -196,19 +375,15 @@ local function showLoadingScreen()
     }
 
     for _, step in ipairs(steps) do
-        -- Анимируем прогресс бар
-        local tween = TweenService:Create(barFill, TweenInfo.new(
+        TweenService:Create(barFill, TweenInfo.new(
             0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out
         ), {
             Size = UDim2.new(step.progress / 100, 0, 1, 0)
-        })
-        tween:Play()
+        }):Play()
 
-        -- Обновляем текст статуса и процента
         status.Text = "› " .. step.text
         percent.Text = step.progress .. "%"
 
-        -- Пульсация процента
         TweenService:Create(percent, TweenInfo.new(0.15), { TextSize = 30 }):Play()
         task.wait(0.15)
         TweenService:Create(percent, TweenInfo.new(0.15), { TextSize = 26 }):Play()
@@ -218,7 +393,7 @@ local function showLoadingScreen()
 
     task.wait(0.4)
 
-    -- ---- Исчезновение загрузочного экрана ----
+    -- ---- Исчезновение ----
     local fadeOut = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
     TweenService:Create(bg, fadeOut, { BackgroundTransparency = 1 }):Play()
     TweenService:Create(container, fadeOut, { BackgroundTransparency = 1 }):Play()
@@ -229,7 +404,16 @@ local function showLoadingScreen()
     TweenService:Create(barFill, fadeOut, { BackgroundTransparency = 1 }):Play()
     TweenService:Create(barGlow, fadeOut, { Transparency = 1 }):Play()
     TweenService:Create(percent, fadeOut, { TextTransparency = 1 }):Play()
-    TweenService:Create(footer, fadeOut, { TextTransparency = 1 }):Play()
+    TweenService:Create(divider, fadeOut, { BackgroundTransparency = 1 }):Play()
+    TweenService:Create(devLabel, fadeOut, { TextTransparency = 1 }):Play()
+    TweenService:Create(ghText, fadeOut, { TextTransparency = 1 }):Play()
+    TweenService:Create(version, fadeOut, { TextTransparency = 1 }):Play()
+
+    for _, v in ipairs(ghLogo:GetDescendants()) do
+        if v:IsA("Frame") then
+            TweenService:Create(v, fadeOut, { BackgroundTransparency = 1 }):Play()
+        end
+    end
 
     task.wait(0.55)
     gui:Destroy()
@@ -281,6 +465,19 @@ local function showIntro()
     subtitle.TextStrokeColor3 = Color3.fromRGB(80, 0, 0)
     subtitle.Parent = gui
 
+    -- Подпись разработчика на заставке
+    local devSign = Instance.new("TextLabel")
+    devSign.Size = UDim2.new(1, 0, 0, 24)
+    devSign.Position = UDim2.new(0.5, 0, 1, -60)
+    devSign.AnchorPoint = Vector2.new(0.5, 0)
+    devSign.BackgroundTransparency = 1
+    devSign.Text = "by " .. DEV.NAME .. "  •  " .. DEV.GITHUB
+    devSign.TextColor3 = Color3.fromRGB(180, 180, 180)
+    devSign.Font = Enum.Font.Gotham
+    devSign.TextSize = 14
+    devSign.TextTransparency = 1
+    devSign.Parent = gui
+
     local grad = Instance.new("UIGradient")
     grad.Color = ColorSequence.new{
         ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 255, 255)),
@@ -318,6 +515,10 @@ local function showIntro()
         Position = UDim2.new(0.5, 0, 0.5, 80)
     }):Play()
 
+    -- Появление подписи разработчика
+    task.wait(0.4)
+    TweenService:Create(devSign, TweenInfo.new(0.6), { TextTransparency = 0 }):Play()
+
     task.spawn(function()
         task.wait(1.0)
         local pulseTime = 0
@@ -339,6 +540,7 @@ local function showIntro()
         TextTransparency = 1, TextStrokeTransparency = 1,
         Position = UDim2.new(0.5, 0, 0.5, 60)
     }):Play()
+    TweenService:Create(devSign, TweenInfo.new(0.6), { TextTransparency = 1 }):Play()
     TweenService:Create(bg, TweenInfo.new(0.6), { BackgroundTransparency = 1 }):Play()
 
     task.wait(0.7)
@@ -455,15 +657,8 @@ end)
 -- =========================================
 --           ПОСЛЕДОВАТЕЛЬНОСТЬ
 -- =========================================
-
--- 1. Показываем загрузочный экран
 showLoadingScreen()
-
--- 2. Небольшая пауза
 task.wait(0.2)
-
--- 3. Показываем анимированную заставку
 showIntro()
 
--- 4. Скрипт готов
-print("[Knife Duels Aim] Загружено. Зажми E для активации.")
+print("[Knife Duels Aim] by " .. DEV.NAME .. " (" .. DEV.GITHUB .. ") — загружено. Зажми E для активации.")
