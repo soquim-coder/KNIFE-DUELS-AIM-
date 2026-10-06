@@ -1,2 +1,1 @@
-# KNIFE-DUELS-AIM-
-🎯 Aimbot на бинд E с wallcheck • Зажми E — плавная наводка на игрока • Wallcheck — наводится только на тех, кого видно • Отпустил бинд — всё отключается
+# KNIFE-DUELS-AIM
