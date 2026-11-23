@@ -1,2 +1,2 @@
 # Soquim (KNIFE DUELS)
-VERSION 2.5
+VERSION 1.5
